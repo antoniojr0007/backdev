@@ -4,7 +4,7 @@ function deg2rad(deg) {
   
   module.exports = function getDistanceFromLatLonInKm(
     centerCoordinates,
-    pointCoordinates
+    pointCoordinates 
   ) {
     const radius = 6371;
   
