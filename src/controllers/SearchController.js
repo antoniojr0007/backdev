@@ -1,5 +1,5 @@
 const Dev = require('../models/Dev');
-const str2array = require('./utils/str2array');
+const parseStringAsArray = require('../utils/parseStringAsArray');
 
 module.exports = {
     async index(req, res){ // raio 10km + filtro de techs
@@ -7,7 +7,7 @@ module.exports = {
 
         const devs = await Dev.find({
             techs: {
-                $in: str2array(techs, true)
+                $in: parseStringAsArray(techs, true)
             },
             location: {
                 $near: {
