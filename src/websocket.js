@@ -1,6 +1,6 @@
 const socketio = require("socket.io");
-const str2arr = require("./controllers/utils/str2array");
-const calculateDistance = require("./controllers/utils/calculateDistance");
+const parseStringAsArray = require("./utils/parseStringAsArray");
+const calculateDistance = require("./utils/calculateDistance");
 
 let io;
 const connections = [];
@@ -9,14 +9,16 @@ exports.setupWebSocket = server => {
   io = socketio(server);
 
   io.on("connection", socket => {
+    console.log("Novo User connected ", socket.id);
     const { latitude, longitude, techs } = socket.handshake.query;
+
     connections.push({
       id: socket.id,
       coordinates: {
         latitude: Number(latitude),
         longitude: Number(longitude)
       },
-      techs: str2arr(techs === undefined ? "" : techs)
+      techs: parseStringAsArray(techs)
     });
   });
 };

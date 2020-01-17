@@ -1,87 +1,93 @@
-const axios = require("axios");
 const Dev = require("../models/Dev");
-const str2array = require("./utils/str2array");
+const axios = require("axios");
+const parseStringAsArray = require("../utils/parseStringAsArray");
 const { findConnections, sendMessage } = require("../websocket");
 
 module.exports = {
   async index(req, res) {
     const devs = await Dev.find();
-    return res.json({ devs });
+
+    return res.json(devs);
   },
 
-  async create(req, res) {
-    const { github, techs, latitude, longitude } = req.body;
+  async store(req, res) {
+    const { github_username, techs, latitude, longitude } = req.body;
 
-    const devExists = await Dev.findOne({ github });
-    if (devExists) return res.json(devExists);
+    let dev = await Dev.findOne({ github_username });
 
-    const apiResponse = await axios.get(
-      `https://api.github.com/users/${github}`
-    );
+    if (!dev) {
+      const techsArray = parseStringAsArray(techs);
 
-    const { name = login, avatar_url, bio } = apiResponse.data;
-    techsArray = str2array(techs);
+      const response = await axios.get(
+        `https://api.github.com/users/${github_username}`
+      );
 
-    const location = {
-      type: "Point",
-      coordinates: [longitude, latitude]
-    };
+      const { name, avatar_url, bio } = response.data;
 
-    const dev = await Dev.create({
-      github,
-      name,
-      avatar_url,
-      bio,
-      techs: techsArray,
-      location
-    });
+      // To save location
+      const location = {
+        type: "Point",
+        coordinates: [longitude, latitude]
+      };
 
-    const sendSocketMessageTo = findConnections(
-      { latitude, longitude },
-      techsArray
-    );
+      dev = await Dev.create({
+        github_username,
+        name,
+        avatar_url,
+        bio,
+        techs: techsArray,
+        location
+      });
 
-    sendMessage(sendSocketMessageTo, "new-dev", dev);
+      // Filter conections there are 10km away
+      console.log("im here find connections");
+      const sendSocketMessageTo = findConnections(
+        { latitude, longitude },
+        techsArray
+      );
+
+      sendMessage(sendSocketMessageTo, "new-dev", dev);
+    }
 
     return res.json(dev);
   },
 
-  async read(req, res) {
-    const { github } = req.params;
-    const dev = await Dev.findOne({ github });
-
-    return res.json(dev === null ? {} : dev);
-  },
-
   async update(req, res) {
-    const { github } = req.params;
-    const dev = await Dev.findOne({ github });
-    const { latitude, longitude, techs, ...rest } = req.body;
-    rest.github = github;
-    if (latitude && longitude)
-      var newLocation = {
+    const { id } = req.params;
+
+    let dev = await Dev.findOne({ _id: id });
+
+    if (dev) {
+      const { name, techs, bio, latitude, longitude } = req.body;
+      const { filename } = req.file ? req.file : {};
+
+      const techsArray = parseStringAsArray(techs);
+
+      const location = {
         type: "Point",
         coordinates: [longitude, latitude]
       };
-    if (techs) var techsArray = str2array(techs);
-    const newDev = await Dev.updateOne(
-      { github },
-      {
-        location: latitude && longitude ? newLocation : dev.location,
-        techs: techs ? techsArray : dev.techs,
-        ...rest
-      }
-    );
 
-    return res.json({
-      modifiedCount: newDev.nModified,
-      ok: newDev.ok
-    });
+      dev = await dev.updateOne({
+        name,
+        avatar_url: filename ? filename : dev.avatar_url,
+        bio: bio,
+        techs: techsArray,
+        location
+      });
+    }
+
+    return res.json(dev);
   },
 
-  async delete(req, res) {
-    const { github } = req.params;
-    await Dev.deleteOne({ github });
-    return res.json();
+  async destroy(req, res) {
+    const { id } = req.params;
+
+    try {
+      await Dev.deleteOne({ _id: id });
+      return res.json({ message: "User deleted" });
+    } catch (err) {
+      return res.json(err);
+    }
   }
 };

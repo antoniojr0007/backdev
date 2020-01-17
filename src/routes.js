@@ -1,23 +1,19 @@
-const { Router } = require("express");
-const DevController = require("./controllers/DevController")
-const SearchController = require("./controllers/SearchController")
-const routes = Router();
+const routes = require("express").Router();
 
-// Query: req.query
-// Route: req.params
-// Body : req.body
+const multer = require("multer");
+const uploadConfig = require("./config/upload");
 
+const upload = multer(uploadConfig);
 
-routes
+// Controllers
+const DevController = require("./controllers/DevController");
+const SearchController = require("./controllers/SearchController");
 
-    // DEVS Endpoint
-    .get("/devs", DevController.index)
-    .post("/devs", DevController.create)
-    .get("/devs/:github", DevController.read)
-    .put("/devs/:github", DevController.update)
-    .delete("/devs/:github", DevController.delete)
+routes.get("/devs", DevController.index);
+routes.post("/devs", DevController.store);
+routes.delete("/devs/:id", DevController.destroy);
+routes.put("/devs/:id", upload.single("avatar"), DevController.update);
 
-    // SEARCH Endpoint
-    .get("/search", SearchController.index);
+routes.get("/search", SearchController.index);
 
 module.exports = routes;
