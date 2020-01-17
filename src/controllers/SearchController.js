@@ -1,15 +1,17 @@
 const Dev = require("../models/Dev");
+const parseStringAsArray = require("../utils/parseStringAsArray");
 
 module.exports = {
-  async index(request, response) {
-    const { longitude, latitude, techs } = request.query;
+  async index(req, res) {
+    const { latitude, longitude, techs } = req.query;
 
-    const techsArray = techs.split(",").map(tech => tech.trim());
+    const techsArray = parseStringAsArray(techs);
 
     const devs = await Dev.find({
       techs: {
         $in: techsArray
       },
+
       location: {
         $near: {
           $geometry: {
@@ -21,6 +23,6 @@ module.exports = {
       }
     });
 
-    response.json(devs);
+    return res.json({ devs });
   }
 };
