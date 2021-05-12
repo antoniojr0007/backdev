@@ -18,7 +18,7 @@
     "fs": "^0.0.1-security",
     "jsonwebtoken": "^8.5.1",
     "mongoose": "^5.8.7",
-    "nodemailer": "^6.4.3",
+    "nodemailer": "^6.4.16",
     "nodemailer-handlebars": "^1.0.1",
     "path": "^0.12.7",
     "socket.io": "^2.3.0"
